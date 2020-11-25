@@ -3,19 +3,27 @@
 
 #define HEADLESS
 
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.IO;
 using System.Runtime.InteropServices;
-using Prion.Nucleus;
+using System.IO;
 using Prion.Nucleus.Debug;
 using Prion.Nucleus.IO;
+#if HEADLESS
+using System;
+using Prion.Nucleus;
+#else
+using System.Numerics;
+using Prion.Mitochondria;
+using Prion.Mitochondria.Graphics.Contexts;
+using Prion.Mitochondria.Graphics.Roots;
+using Prion.Mitochondria.Graphics.UI;
+#endif
 
-namespace SMEtoMER
+namespace BedRocker
 {
-    public class SMEtoMER :
+    public class BedRocker :
 #if HEADLESS
         Application
 #else
@@ -27,21 +35,21 @@ namespace SMEtoMER
 
         public static void Main(string[] args)
         {
-            using (SMEtoMER smer = new SMEtoMER(args))
+            using (BedRocker rocker = new BedRocker(args))
             {
-                smer.UpdateFrequency = 10;
+                rocker.UpdateFrequency = 10;
 #if HEADLESS
-                smer.Start();
+                rocker.Start();
 #else
-                smer.Start(new MainMenu());
+                rocker.Start(new MainMenu());
 #endif
-                smer.Dispose();
+                rocker.Dispose();
             }
         }
 
         protected override bool UseLocalDataStorage => true;
 
-        public SMEtoMER(string[] args) : base("SMEtoMER", args)
+        public BedRocker(string[] args) : base("BedRocker", args)
         {
         }
 

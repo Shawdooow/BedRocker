@@ -28,9 +28,9 @@
 	  <AssemblyOriginatorKeyFile>..\..\Sym.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Prion.Nucleus\Prion.Nucleus.csproj" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.0-rc.2.20475.5" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="System.Drawing.Common" Version="5.0.0-rc.2.20475.5" />
+    <ProjectReference Include="..\..\Prion\Prion.Nucleus\Prion.Nucleus.csproj" />
   </ItemGroup>
 </Project>
