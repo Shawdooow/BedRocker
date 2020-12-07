@@ -198,7 +198,7 @@ namespace BedRocker
                 //create the new json file
                 using (FileStream json = folder.CreateFile($"{textures[i]}.texture_set.json"))
                 using (StreamWriter writer = new StreamWriter(json))
-                    writer.Write(GetJSON(textures[i], $"{textures[i]}_mer", $"{textures[i]}_height"));
+                    writer.Write(GetNewJSON(textures[i], $"{textures[i]}_mer", $"{textures[i]}_height"));
 
                 Stream stream = folder.GetStream(textures[i] + "_normal.png");
                 Bitmap bitmap = new Bitmap(stream);
