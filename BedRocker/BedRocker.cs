@@ -9,6 +9,7 @@ using System.Drawing.Imaging;
 using System.Runtime.InteropServices;
 using System.IO;
 using Prion.Nucleus.Debug;
+using Prion.Nucleus.Debug.Benchmarking;
 using Prion.Nucleus.IO;
 #if HEADLESS
 using System;
@@ -63,19 +64,6 @@ namespace BedRocker
             Exit();
         }
 #else
-        protected override GraphicsContext GetContext(string name)
-        {
-            switch (name)
-            {
-                default:
-                    return base.GetContext("GL46");
-                case "Legacy":
-                case "GL41":
-                    return base.GetContext("GL41");
-                case "DX12":
-                    return base.GetContext("DX12");
-            }
-        }
 
         private class MainMenu : Root
         {
@@ -102,6 +90,8 @@ namespace BedRocker
 
         public static void Load(string input, string output)
         {
+            Benchmark b = new Benchmark("Convert Pack", true);
+
             List<string> textures = new List<string>();
 
             Storage sme = ApplicationDataStorage.GetStorage($"{input}\\assets\\minecraft\\textures\\block");
@@ -118,8 +108,11 @@ namespace BedRocker
                 }
             }
 
+            Benchmark o;
+
             for (int i = 0; i < textures.Count; i++)
             {
+                o = new Benchmark($"Convert {textures[i]}", true);
                 Logger.Log($"Converting {textures[i]}...");
                 File.Copy($"{sme.Path}\\{textures[i]}.png", $"{mer.Path}\\{textures[i]}.png");
                 File.Copy($"{sme.Path}\\{textures[i]}{NORMAL_EXTENTION}", $"{mer.Path}\\{textures[i]}_normal.png");
@@ -169,9 +162,12 @@ namespace BedRocker
                 //cleanup
                 bitmap.Dispose();
                 stream.Dispose();
+
+                o.Finish();
             }
 
             Logger.Log("Convertion Complete!");
+            b.Finish();
         }
 
         public static byte[] ConvertSMEtoMER(byte[] file)
