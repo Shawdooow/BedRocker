@@ -1,8 +1,6 @@
 ﻿// Copyright (c) 2018-2020 Shawn Bozek.
 // Licensed under EULA https://docs.google.com/document/d/1xPyZLRqjLYcKMxXLHLmA5TxHV-xww7mHYVUuWLt2q9g/edit?usp=sharing
 
-#define HEADLESS
-
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -11,25 +9,16 @@ using System.IO;
 using Prion.Nucleus.Debug;
 using Prion.Nucleus.Debug.Benchmarking;
 using Prion.Nucleus.IO;
-#if HEADLESS
-using System;
-using Prion.Nucleus;
-#else
 using System.Numerics;
+using FreeImageAPI;
 using Prion.Mitochondria;
-using Prion.Mitochondria.Graphics.Contexts;
+using Prion.Mitochondria.Graphics;
 using Prion.Mitochondria.Graphics.Roots;
 using Prion.Mitochondria.Graphics.UI;
-#endif
 
 namespace BedRocker
 {
-    public class BedRocker :
-#if HEADLESS
-        Application
-#else
-        Game
-#endif
+    public class BedRocker : Game
     {
         public const string SPECULAR_EXTENTION = "_s.png";
         public const string NORMAL_EXTENTION = "_n.png";
@@ -38,12 +27,9 @@ namespace BedRocker
         {
             using (BedRocker rocker = new BedRocker(args))
             {
-                rocker.UpdateFrequency = 10;
-#if HEADLESS
-                rocker.Start();
-#else
+                rocker.UpdateFrequency = 30;
+                Renderer.DrawFrequency = 30;
                 rocker.Start(new MainMenu());
-#endif
                 rocker.Dispose();
             }
         }
@@ -53,17 +39,6 @@ namespace BedRocker
         public BedRocker(string[] args) : base("BedRocker", args)
         {
         }
-
-#if HEADLESS
-        protected override void Update()
-        {
-            base.Update();
-            Load("RTX OFF", "RTX ON");
-            Logger.SystemConsole("Press Enter To Close", ConsoleColor.Magenta);
-            Console.ReadLine();
-            Exit();
-        }
-#else
 
         private class MainMenu : Root
         {
@@ -80,23 +55,38 @@ namespace BedRocker
                         Color = Color.BlueViolet
                     },
 
-                    Text = "DO IT!",
+                    Text = "SMEtoMER",
 
-                    OnClick = () => ScheduleLoad(() => Load("RTX OFF", "RTX ON"))
+                    OnClick = () => ScheduleLoad(() => Load("DXR OFF", "DXR ON"))
+                });
+
+                Add(new Button
+                {
+                    Size = new Vector2(200, 100),
+
+                    Background = TextureStore.GetTexture("square.png"),
+                    BackgroundSprite =
+                    {
+                        Color = Color.Blue
+                    },
+
+                    Text = "NORMALtoHEIGHT",
+
+                    OnClick = () => ScheduleLoad(() => Heightmap("DXR ON"))
                 });
             }
         }
-#endif
 
         public static void Load(string input, string output)
         {
-            Benchmark b = new Benchmark("Convert Pack", true);
+            Benchmark b = new Benchmark("Convert Pack to DXR", true);
 
             List<string> textures = new List<string>();
 
             Storage sme = ApplicationDataStorage.GetStorage($"{input}\\assets\\minecraft\\textures\\block");
             Storage mer = ApplicationDataStorage.GetStorage($"{output}");
 
+            //index the files
             foreach (string file in sme.GetFiles())
             {
                 if (!file.Contains(SPECULAR_EXTENTION) && !file.Contains(NORMAL_EXTENTION))
@@ -110,9 +100,11 @@ namespace BedRocker
 
             Benchmark o;
 
+            //convert them now
             for (int i = 0; i < textures.Count; i++)
             {
-                o = new Benchmark($"Convert {textures[i]}", true);
+                o = new Benchmark($"Convert {textures[i]} to DXR", true);
+
                 Logger.Log($"Converting {textures[i]}...");
                 File.Copy($"{sme.Path}\\{textures[i]}.png", $"{mer.Path}\\{textures[i]}.png");
                 File.Copy($"{sme.Path}\\{textures[i]}{NORMAL_EXTENTION}", $"{mer.Path}\\{textures[i]}_normal.png");
@@ -124,12 +116,13 @@ namespace BedRocker
 
                 Stream stream = sme.GetStream(textures[i] + SPECULAR_EXTENTION);
                 Bitmap bitmap = new Bitmap(stream);
+                //bitmap.RotateFlip(RotateFlipType.Rotate270FlipNone);
 
                 //if it isnt a square then rip for now
                 int size = bitmap.Width;
 
                 //SME to MER isn't a straight copy sadly, but this should convert it quite nicely
-                byte[] data = ConvertSMEtoMER(To32BppRgba(bitmap));
+                byte[] data = ConvertSMEtoMER(bitmap.To32BppRgba());
 
                 bitmap.Dispose();
                 stream.Dispose();
@@ -138,9 +131,9 @@ namespace BedRocker
 
                 //Write MER array to bitmap now
                 int p = 0;
-                for (int x = 0; x < size; x++)
+                for (int y = 0; y < size; y++)
                 {
-                    for (int y = 0; y < size; y++)
+                    for (int x = 0; x < size; x++)
                     {
                         Color c = Color.FromArgb(
                             255,
@@ -170,6 +163,84 @@ namespace BedRocker
             b.Finish();
         }
 
+        public static void Heightmap(string input)
+        {
+            Benchmark b = new Benchmark("Convert DXR to HEIGHT", true);
+
+            List<string> textures = new List<string>();
+
+            Storage folder = ApplicationDataStorage.GetStorage($"{input}");
+
+            //index the files
+            foreach (string file in folder.GetFiles())
+            {
+                if (!file.Contains(".texture_set.json") && !file.Contains("_mer.png") && !file.Contains("_normal.png"))
+                {
+                    string name = Path.GetFileNameWithoutExtension(file);
+
+                    textures.Add(name);
+                    Logger.Log($"Found {name}...");
+                }
+            }
+
+            Benchmark o;
+
+            //convert them now
+            for (int i = 0; i < textures.Count; i++)
+            {
+                o = new Benchmark($"Convert {textures[i]} to HEIGHT", true);
+
+                Logger.Log($"Converting {textures[i]}...");
+
+                //delete the old one
+                folder.DeleteFile($"{textures[i]}.texture_set.json");
+
+                //create the new json file
+                using (FileStream json = folder.CreateFile($"{textures[i]}.texture_set.json"))
+                using (StreamWriter writer = new StreamWriter(json))
+                    writer.Write(GetJSON(textures[i], $"{textures[i]}_mer", $"{textures[i]}_height"));
+
+                Stream stream = folder.GetStream(textures[i] + "_normal.png");
+                Bitmap bitmap = new Bitmap(stream);
+                bitmap.RotateFlip(RotateFlipType.RotateNoneFlipY);
+
+                //if it isnt a square then rip for now
+                int size = bitmap.Width;
+
+                //convert it to an 8bpp array
+                byte[] data = ConvertNORMALtoHEIGHT(bitmap.To24BppRgb());
+
+                bitmap.Dispose();
+                stream.Dispose();
+
+                FIBITMAP bit = FreeImage.Allocate(size, size, 8);
+
+                //Write HEIGHT array to bitmap now
+                int p = 0;
+                for (uint y = 0; y < size; y++)
+                {
+                    for (uint x = 0; x < size; x++)
+                    {
+                        FreeImage.SetPixelIndex(bit, x, y, ref data[p]);
+                        p++;
+                    }
+                }
+
+                stream = folder.GetStream($"{textures[i]}_height.png", FileAccess.Write, FileMode.Create);
+                FreeImage.SaveToStream(bit, stream, FREE_IMAGE_FORMAT.FIF_PNG);
+
+                Logger.Log($"Saved {textures[i]}!");
+
+                //cleanup
+                stream.Dispose();
+                folder.DeleteFile(textures[i] + "_normal.png");
+
+                o.Finish();
+            }
+
+            b.Finish();
+        }
+
         public static byte[] ConvertSMEtoMER(byte[] file)
         {
             //we don't want alpha
@@ -188,44 +259,28 @@ namespace BedRocker
             return adjusted;
         }
 
+        public static byte[] ConvertNORMALtoHEIGHT(byte[] file)
+        {
+            //we only want blue
+            byte[] adjusted = new byte[file.Length / 3];
+
+            //NORMAL -> HEIGHTMAP
+            int o = 0;
+            for (int i = 0; i < adjusted.Length; i++)
+            {
+                adjusted[i] = file[o + 2];
+                o += 3;
+            }
+
+            return adjusted;
+        }
+
         public static string GetJSON(string color, string mer, string normal) =>
             "{\"format_version\": \"1.16.100\",\"minecraft:texture_set\": {\"color\": \"" + color +
             "\",\"metalness_emissive_roughness\": \"" + mer + "\",\"normal\": \"" + normal + "\"}}";
 
-
-        /// <summary>
-        ///     byte[] Prion.Mitochondria.Graphics.GraphicsUtilities.To32BppRgba(this Bitmap bitmap);
-        /// </summary>
-        /// <param name="bitmap"></param>
-        /// <returns></returns>
-        public static byte[] To32BppRgba(Bitmap bitmap)
-        {
-            Rectangle sourceArea = new Rectangle(0, 0, bitmap.Width, bitmap.Height);
-
-            List<byte> data = new List<byte>();
-
-            BitmapData bitmapData = bitmap.LockBits(sourceArea, ImageLockMode.ReadOnly, PixelFormat.Format32bppPArgb);
-
-            // Convert all pixels 
-            for (int y = 0; y < bitmap.Height; y++)
-            {
-                int offset = bitmapData.Stride * y;
-                for (int x = 0; x < bitmap.Width; x++)
-                {
-                    byte B = Marshal.ReadByte(bitmapData.Scan0, offset++);
-                    byte G = Marshal.ReadByte(bitmapData.Scan0, offset++);
-                    byte R = Marshal.ReadByte(bitmapData.Scan0, offset++);
-                    byte A = Marshal.ReadByte(bitmapData.Scan0, offset++);
-
-                    data.Add(R);
-                    data.Add(G);
-                    data.Add(B);
-                    data.Add(A);
-                }
-            }
-
-            bitmap.UnlockBits(bitmapData);
-            return data.ToArray();
-        }
+        public static string GetNewJSON(string color, string mer, string height) =>
+            "{\"format_version\": \"1.16.100\",\"minecraft:texture_set\": {\"color\": \"" + color +
+            "\",\"metalness_emissive_roughness\": \"" + mer + "\",\"heightmap\": \"" + height + "\"}}";
     }
 }
