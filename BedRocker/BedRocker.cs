@@ -1,6 +1,7 @@
 ﻿// Copyright (c) 2018-2020 Shawn Bozek.
 // Licensed under EULA https://docs.google.com/document/d/1xPyZLRqjLYcKMxXLHLmA5TxHV-xww7mHYVUuWLt2q9g/edit?usp=sharing
 
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -15,6 +16,7 @@ using Prion.Mitochondria;
 using Prion.Mitochondria.Graphics;
 using Prion.Mitochondria.Graphics.Roots;
 using Prion.Mitochondria.Graphics.UI;
+using Prion.Nucleus.Utilities;
 
 namespace BedRocker
 {
@@ -261,16 +263,32 @@ namespace BedRocker
 
         public static byte[] ConvertNORMALtoHEIGHT(byte[] file)
         {
-            //we only want blue
+            float min = 255;
+            float max = 0;
+
             byte[] adjusted = new byte[file.Length / 3];
 
-            //NORMAL -> HEIGHTMAP
             int o = 0;
-            for (int i = 0; i < adjusted.Length; i++)
+            //NORMAL -> HEIGHT
+            for (int i = 0; i < file.Length; i += 3)
             {
-                adjusted[i] = file[o + 2];
-                o += 3;
+                //byte R = file[i];
+                //byte G = file[i + 1];
+                byte B = file[i + 2];
+
+                //byte avg = (byte)((R + G + B) / 3);
+                byte avg = B;
+                adjusted[o] = avg;
+
+                min = Math.Min(min, avg);
+                max = Math.Max(max, avg);
+
+                o++;
             }
+
+            //remap averages
+            for (int i = 0; i < adjusted.Length; i++)
+                adjusted[i] = (byte)PrionMath.Scale(adjusted[i], min, max, 0, 255);
 
             return adjusted;
         }
