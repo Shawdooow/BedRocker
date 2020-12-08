@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Prion.Mitochondria", "..\Pr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BedRocker", "BedRocker\BedRocker.csproj", "{34519BD6-0C36-4512-8E13-6CB947D9ACAB}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Prion.Golgi", "..\Prion\Prion.Golgi\Prion.Golgi.csproj", "{341A6E7F-D563-4248-8004-0779A462338C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,12 @@ Global
 		{34519BD6-0C36-4512-8E13-6CB947D9ACAB}.Publish|Any CPU.Build.0 = Publish|Any CPU
 		{34519BD6-0C36-4512-8E13-6CB947D9ACAB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{34519BD6-0C36-4512-8E13-6CB947D9ACAB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{341A6E7F-D563-4248-8004-0779A462338C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{341A6E7F-D563-4248-8004-0779A462338C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{341A6E7F-D563-4248-8004-0779A462338C}.Publish|Any CPU.ActiveCfg = Publish|Any CPU
+		{341A6E7F-D563-4248-8004-0779A462338C}.Publish|Any CPU.Build.0 = Publish|Any CPU
+		{341A6E7F-D563-4248-8004-0779A462338C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{341A6E7F-D563-4248-8004-0779A462338C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -43,6 +51,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{6794BE50-3AC2-4BD1-991D-049F4F38E913} = {E0619336-A94F-4280-838B-484A35261D76}
 		{00D24C17-2873-49A5-B82B-638FCC759D95} = {E0619336-A94F-4280-838B-484A35261D76}
+		{341A6E7F-D563-4248-8004-0779A462338C} = {E0619336-A94F-4280-838B-484A35261D76}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1FF9E9E5-F170-4859-B102-80968AAE1D5A}
