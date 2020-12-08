@@ -11,6 +11,7 @@ using Prion.Nucleus.Debug.Benchmarking;
 using Prion.Nucleus.IO;
 using System.Numerics;
 using FreeImageAPI;
+using Prion.Golgi.Graphics.Overlays;
 using Prion.Mitochondria;
 using Prion.Mitochondria.Graphics;
 using Prion.Mitochondria.Graphics.Roots;
@@ -58,7 +59,7 @@ namespace BedRocker
 
                     Text = "SMEtoMER",
 
-                    OnClick = () => ScheduleLoad(() => Load("DXR OFF", "DXR ON"))
+                    OnClick = () => ScheduleLoad(() => SMEtoMER("DXR OFF", "DXR ON"))
                 });
 
                 Add(new Button
@@ -75,14 +76,39 @@ namespace BedRocker
 
                     OnClick = () => ScheduleLoad(() => Heightmap("DXR ON"))
                 });
+
+                Add(new Button
+                {
+                    Position = new Vector2(0, 180),
+                    Size = new Vector2(200, 100),
+                
+                    Background = TextureStore.GetTexture("square.png"),
+                    BackgroundSprite =
+                    {
+                        Color = Color.MediumSeaGreen
+                    },
+                
+                    Text = "Clean",
+                
+                    OnClick = () => ScheduleLoad(() => Clean(new[]
+                    {
+                        "DXR OFF",
+                        "DXR ON"
+                    }))
+                });
+
+                Add(new PerformanceDisplay(DisplayType.FPS));
             }
         }
 
-        public static void Load(string input, string output)
+        public static void SMEtoMER(string input, string output)
         {
             Benchmark b = new Benchmark("Convert Pack to DXR", true);
 
             List<string> textures = new List<string>();
+
+            if (ApplicationDataStorage.Exists(output))
+                ApplicationDataStorage.DeleteDirectory(output, true);
 
             Storage sme = ApplicationDataStorage.GetStorage($"{input}\\assets\\minecraft\\textures\\block");
             Storage mer = ApplicationDataStorage.GetStorage($"{output}");
@@ -106,16 +132,19 @@ namespace BedRocker
             {
                 o = new Benchmark($"Convert {textures[i]} to DXR", true);
 
-                Logger.Log($"Converting {textures[i]}...");
-                File.Copy($"{sme.Path}\\{textures[i]}.png", $"{mer.Path}\\{textures[i]}.png");
-                File.Copy($"{sme.Path}\\{textures[i]}{NORMAL_EXTENTION}", $"{mer.Path}\\{textures[i]}_normal.png");
+                string java = textures[i];
+                string bedrock = GetBedrockTextureName(java);
+
+                Logger.Log($"Converting {java} to {bedrock}...");
+                File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
+                File.Copy($"{sme.Path}\\{java}{NORMAL_EXTENTION}", $"{mer.Path}\\{bedrock}_normal.png");
 
                 //create the json file
-                using (FileStream json = mer.CreateFile($"{textures[i]}.texture_set.json"))
+                using (FileStream json = mer.CreateFile($"{bedrock}.texture_set.json"))
                 using (StreamWriter writer = new StreamWriter(json))
-                    writer.Write(GetJSON(textures[i], $"{textures[i]}_mer", $"{textures[i]}_normal"));
+                    writer.Write(GetJSON(bedrock, $"{bedrock}_mer", $"{bedrock}_normal"));
 
-                Stream stream = sme.GetStream(textures[i] + SPECULAR_EXTENTION);
+                Stream stream = sme.GetStream(java + SPECULAR_EXTENTION);
                 Bitmap bitmap = new Bitmap(stream);
                 //bitmap.RotateFlip(RotateFlipType.Rotate270FlipNone);
 
@@ -148,10 +177,10 @@ namespace BedRocker
                 }
 
                 //TODO: Remove Transparency before saving!
-                stream = mer.GetStream($"{textures[i]}_mer.png", FileAccess.Write, FileMode.Create);
+                stream = mer.GetStream($"{bedrock}_mer.png", FileAccess.Write, FileMode.Create);
                 bitmap.Save(stream, ImageFormat.Png);
 
-                Logger.Log($"Saved {textures[i]}!");
+                Logger.Log($"Saved {bedrock}!");
 
                 //cleanup
                 bitmap.Dispose();
@@ -242,6 +271,13 @@ namespace BedRocker
             b.Finish();
         }
 
+        public static void Clean(string[] folders)
+        {
+            for (int i = 0; i < folders.Length; i++)
+                if (ApplicationDataStorage.Exists(folders[i]))
+                    ApplicationDataStorage.DeleteDirectory(folders[i], true);
+        }
+
         public static byte[] ConvertSMEtoMER(byte[] file)
         {
             //we don't want alpha
@@ -299,5 +335,86 @@ namespace BedRocker
         public static string GetNewJSON(string color, string mer, string height) =>
             "{\"format_version\": \"1.16.100\",\"minecraft:texture_set\": {\"color\": \"" + color +
             "\",\"metalness_emissive_roughness\": \"" + mer + "\",\"heightmap\": \"" + height + "\"}}";
+
+        public static string GetBedrockTextureName(string java)
+        {
+            return java switch
+            {
+
+                "oak_log_top" => "log_oak_top",
+                "oak_log" => "log_oak",
+                "oak_planks" => "planks_oak",
+                "oak_door_top" => "door_oak_upper",
+                "oak_door_bottom" => "door_oak_lower",
+
+                "spruce_log_top" => "log_spruce_top",
+                "spruce_log" => "log_spruce",
+                "spruce_planks" => "planks_spruce",
+                "spruce_door_top" => "door_spruce_upper",
+                "spruce_door_bottom" => "door_spruce_lower",
+
+                "birch_log_top" => "log_birch_top",
+                "birch_log" => "log_birch",
+                "birch_planks" => "planks_birch",
+                "birch_door_top" => "door_birch_upper",
+                "birch_door_bottom" => "door_birch_lower",
+
+                "jungle_log_top" => "log_jungle_top",
+                "jungle_log" => "log_jungle",
+                "jungle_planks" => "planks_jungle",
+                "jungle_door_top" => "door_jungle_upper",
+                "jungle_door_bottom" => "door_jungle_lower",
+
+                "acacia_log_top" => "log_acacia_top",
+                "acacia_log" => "log_acacia",
+                "acacia_planks" => "planks_acacia",
+                "acacia_door_top" => "door_acacia_upper",
+                "acacia_door_bottom" => "door_acacia_lower",
+
+                "dark_oak_log_top" => "log_big_oak_top",
+                "dark_oak_log" => "log_big_oak",
+                "dark_oak_planks" => "planks_big_oak",
+                "dark_oak_door_top" => "door_dark_oak_upper",
+                "dark_oak_door_bottom" => "door_dark_oak_lower",
+
+                "warped_stem" => "warped_stem_side",
+                "warped_nylium" => "warped_nylium_top",
+
+                "crimson_stem" => "crimson_stem_side",
+                "crimson_nylium" => "crimson_nylium_top",
+
+                "bricks" => "brick",
+
+                "mossy_cobblestone" => "cobblestone_mossy",
+                "mossy_stone_bricks" => "stonebrick_mossy",
+
+                "cracked_stone_bricks" => "stonebrick_cracked",
+
+                "nether_bricks" => "nether_brick",
+
+                "end_stone_bricks" => "end_bricks",
+
+                "podzol_top" => "dirt_podzol_top",
+                "podzol_side" => "dirt_podzol_side",
+
+                "black_wool" => "wool_colored_black",
+                "blue_wool" => "wool_colored_blue",
+                "brown_wool" => "wool_colored_brown",
+                "cyan_wool" => "wool_colored_cyan",
+                "gray_wool" => "wool_colored_gray",
+                "green_wool" => "wool_colored_green",
+                "light_blue_wool" => "wool_colored_light_blue",
+                "light_gray_wool" => "wool_colored_light_gray",
+                "lime_wool" => "wool_colored_lime",
+                "magenta_wool" => "wool_colored_magenta",
+                "orange_wool" => "wool_colored_orange",
+                "pink_wool" => "wool_colored_pink",
+                "purple_wool" => "wool_colored_purple",
+                "red_wool" => "wool_colored_red",
+                "white_wool" => "wool_colored_white",
+                "yellow_wool" => "wool_colored_yellow",
+                _ => java
+            };
+        }
     }
 }
