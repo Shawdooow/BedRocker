@@ -146,7 +146,6 @@ namespace BedRocker
 
                 Stream stream = sme.GetStream(java + SPECULAR_EXTENTION);
                 Bitmap bitmap = new Bitmap(stream);
-                //bitmap.RotateFlip(RotateFlipType.Rotate270FlipNone);
 
                 //if it isnt a square then rip for now
                 int size = bitmap.Width;
@@ -340,6 +339,12 @@ namespace BedRocker
         {
             return java switch
             {
+                "grass_block_top" => "grass_top",
+                "grass_block_side_overlay" => "grass_side",
+                "grass_block_snow" => "grass_side_snowed",
+
+                "tall_grass_top" => "double_plant_grass_top",
+                "tall_grass_bottom" => "double_plant_grass_bottom",
 
                 "oak_log_top" => "log_oak_top",
                 "oak_log" => "log_oak",
@@ -387,6 +392,14 @@ namespace BedRocker
 
                 "mossy_cobblestone" => "cobblestone_mossy",
                 "mossy_stone_bricks" => "stonebrick_mossy",
+
+                "andesite" => "stone_andesite",
+                "diorite" => "stone_diorite",
+                "granite" => "stone_granite",
+
+                "polished_andesite" => "stone_andesite_smooth",
+                "polished_diorite" => "stone_diorite_smooth",
+                "polished_granite" => "stone_granite_smooth",
 
                 "cracked_stone_bricks" => "stonebrick_cracked",
 
