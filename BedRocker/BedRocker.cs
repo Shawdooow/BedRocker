@@ -38,6 +38,8 @@ namespace BedRocker
 
         protected override bool UseLocalDataStorage => true;
 
+        protected override bool EnableAudio => false;
+
         public BedRocker(string[] args) : base("BedRocker", args)
         {
         }
