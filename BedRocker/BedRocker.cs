@@ -14,6 +14,7 @@ using FreeImageAPI;
 using Prion.Golgi.Graphics.Overlays;
 using Prion.Mitochondria;
 using Prion.Mitochondria.Graphics;
+using Prion.Mitochondria.Graphics.Layers;
 using Prion.Mitochondria.Graphics.Roots;
 using Prion.Mitochondria.Graphics.UI;
 using Prion.Nucleus.Utilities;
@@ -48,55 +49,76 @@ namespace BedRocker
         {
             public MainMenu()
             {
-                Add(new Button
+                Add(new ListLayer<Button>
                 {
-                    Position = new Vector2(0, -180),
-                    Size = new Vector2(200, 100),
+                    Size = new Vector2(200, 440),
+                    Position = new Vector2(0, -220),
+                    Spacing = 10,
 
-                    Background = TextureStore.GetTexture("square.png"),
-                    BackgroundSprite =
+                    Children = new []
                     {
-                        Color = Color.BlueViolet
-                    },
+                        new Button
+                        {
+                            Size = new Vector2(200, 100),
 
-                    Text = "SMEtoMER",
+                            Background = TextureStore.GetTexture("square.png"),
+                            BackgroundSprite =
+                            {
+                                Color = Color.BlueViolet
+                            },
 
-                    OnClick = () => ScheduleLoad(() => SMEtoMER("DXR OFF", "DXR ON"))
-                });
+                            Text = "SMEtoMER",
 
-                Add(new Button
-                {
-                    Size = new Vector2(200, 100),
+                            OnClick = () => ScheduleLoad(() => SMEtoMER("DXR OFF", "DXR ON"))
+                        },
+                        new Button
+                        {
+                            Size = new Vector2(200, 100),
 
-                    Background = TextureStore.GetTexture("square.png"),
-                    BackgroundSprite =
-                    {
-                        Color = Color.Blue
-                    },
+                            Background = TextureStore.GetTexture("square.png"),
+                            BackgroundSprite =
+                            {
+                                Color = Color.DarkOrchid
+                            },
 
-                    Text = "NORMALtoHEIGHT",
+                            Text = "LABtoMER",
 
-                    OnClick = () => ScheduleLoad(() => Heightmap("DXR ON"))
-                });
+                            Disabled = true,
+                            //OnClick = () => ScheduleLoad(() => SMEtoMER("DXR OFF", "DXR ON"))
+                        },
+                        new Button
+                        {
+                            Size = new Vector2(200, 100),
 
-                Add(new Button
-                {
-                    Position = new Vector2(0, 180),
-                    Size = new Vector2(200, 100),
-                
-                    Background = TextureStore.GetTexture("square.png"),
-                    BackgroundSprite =
-                    {
-                        Color = Color.MediumSeaGreen
-                    },
-                
-                    Text = "Clean",
-                
-                    OnClick = () => ScheduleLoad(() => Clean(new[]
-                    {
-                        "DXR OFF",
-                        "DXR ON"
-                    }))
+                            Background = TextureStore.GetTexture("square.png"),
+                            BackgroundSprite =
+                            {
+                                Color = Color.Blue
+                            },
+
+                            Text = "NORMALtoHEIGHT",
+
+                            OnClick = () => ScheduleLoad(() => Heightmap("DXR ON"))
+                        },
+                        new Button
+                        {
+                            Size = new Vector2(200, 100),
+
+                            Background = TextureStore.GetTexture("square.png"),
+                            BackgroundSprite =
+                            {
+                                Color = Color.MediumSeaGreen
+                            },
+
+                            Text = "Clean",
+
+                            OnClick = () => ScheduleLoad(() => Clean(new[]
+                            {
+                                "DXR OFF",
+                                "DXR ON"
+                            }))
+                        }
+                    }
                 });
 
                 Add(new PerformanceDisplay(DisplayType.FPS));
