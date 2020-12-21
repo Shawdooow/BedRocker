@@ -51,8 +51,8 @@ namespace BedRocker
             {
                 Add(new ListLayer<Button>
                 {
-                    Size = new Vector2(200, 440),
-                    Position = new Vector2(0, -220),
+                    Size = new Vector2(200, 550),
+                    Position = new Vector2(0, -275),
                     Spacing = 10,
 
                     Children = new []
@@ -84,7 +84,22 @@ namespace BedRocker
                             Text = "LABtoMER",
 
                             Disabled = true,
-                            //OnClick = () => ScheduleLoad(() => SMEtoMER("DXR OFF", "DXR ON"))
+                            //OnClick = () => ScheduleLoad(() => LABtoMER("DXR OFF", "DXR ON"))
+                        },
+                        new Button
+                        {
+                            Size = new Vector2(200, 100),
+
+                            Background = TextureStore.GetTexture("square.png"),
+                            BackgroundSprite =
+                            {
+                                Color = Color.DeepPink
+                            },
+
+                            Text = "Optimize",
+
+                            Disabled = true,
+                            //OnClick = () => ScheduleLoad(() => Optimize("DXR ON"))
                         },
                         new Button
                         {
