@@ -17,6 +17,7 @@ using Prion.Mitochondria.Graphics;
 using Prion.Mitochondria.Graphics.Layers;
 using Prion.Mitochondria.Graphics.Roots;
 using Prion.Mitochondria.Graphics.UI;
+using Prion.Nucleus.IO.Configs;
 using Prion.Nucleus.Utilities;
 
 namespace BedRocker
@@ -29,20 +30,27 @@ namespace BedRocker
         public static void Main(string[] args)
         {
             using (BedRocker rocker = new BedRocker(args))
-            {
-                rocker.UpdateFrequency = 30;
-                Renderer.DrawFrequency = 30;
                 rocker.Start(new MainMenu());
-                rocker.Dispose();
-            }
         }
 
         protected override bool UseLocalDataStorage => true;
 
         protected override bool EnableAudio => false;
 
-        public BedRocker(string[] args) : base("BedRocker", args)
+        protected BedRocker(string[] args) : base("BedRocker", args)
         {
+            int dtco = Settings.GetInt(PrionSetting.DynamicThreadCountOverride);
+
+            if (dtco <= -1)
+            {
+                while (FreeProcessors > 0)
+                    CreateDynamicTask();
+            }
+            else
+            {
+                while (DynamicThreads.Count < dtco)
+                    CreateDynamicTask();
+            }
         }
 
         private class MainMenu : Root
@@ -138,97 +146,104 @@ namespace BedRocker
 
                 Add(new PerformanceDisplay(DisplayType.FPS));
             }
-        }
 
-        public static void SMEtoMER(string input, string output)
-        {
-            Benchmark b = new Benchmark("Convert Pack to DXR", true);
-
-            List<string> textures = new List<string>();
-
-            if (ApplicationDataStorage.Exists(output))
-                ApplicationDataStorage.DeleteDirectory(output, true);
-
-            Storage sme = ApplicationDataStorage.GetStorage($"{input}\\assets\\minecraft\\textures\\block");
-            Storage mer = ApplicationDataStorage.GetStorage($"{output}");
-
-            //index the files
-            foreach (string file in sme.GetFiles())
+            public override void LoadingComplete()
             {
-                if (!file.Contains(SPECULAR_EXTENTION) && !file.Contains(NORMAL_EXTENTION))
-                {
-                    string name = Path.GetFileNameWithoutExtension(file);
-
-                    textures.Add(name);
-                    Logger.Log($"Found {name}...");
-                }
+                Parent.UpdateFrequency = 30;
+                Renderer.DrawFrequency = 30;
+                base.LoadingComplete();
             }
 
-            Benchmark o;
-
-            //convert them now
-            for (int i = 0; i < textures.Count; i++)
+            public void SMEtoMER(string input, string output)
             {
-                o = new Benchmark($"Convert {textures[i]} to DXR", true);
+                Benchmark b = new Benchmark("Convert Pack to DXR", true);
 
-                string java = textures[i];
-                string bedrock = GetBedrockTextureName(java);
+                List<string> textures = new List<string>();
 
-                Logger.Log($"Converting {java} to {bedrock}...");
-                File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
-                File.Copy($"{sme.Path}\\{java}{NORMAL_EXTENTION}", $"{mer.Path}\\{bedrock}_normal.png");
+                if (ApplicationDataStorage.Exists(output))
+                    ApplicationDataStorage.DeleteDirectory(output, true);
 
-                //create the json file
-                using (FileStream json = mer.CreateFile($"{bedrock}.texture_set.json"))
-                using (StreamWriter writer = new StreamWriter(json))
-                    writer.Write(GetJSON(bedrock, $"{bedrock}_mer", $"{bedrock}_normal"));
+                Storage sme = ApplicationDataStorage.GetStorage($"{input}\\assets\\minecraft\\textures\\block");
+                Storage mer = ApplicationDataStorage.GetStorage($"{output}");
 
-                Stream stream = sme.GetStream(java + SPECULAR_EXTENTION);
-                Bitmap bitmap = new Bitmap(stream);
-
-                //if it isnt a square then rip for now
-                int size = bitmap.Width;
-
-                //SME to MER isn't a straight copy sadly, but this should convert it quite nicely
-                byte[] data = ConvertSMEtoMER(bitmap.To32BppRgba());
-
-                bitmap.Dispose();
-                stream.Dispose();
-
-                bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
-
-                //Write MER array to bitmap now
-                int p = 0;
-                for (int y = 0; y < size; y++)
+                //index the files
+                foreach (string file in sme.GetFiles())
                 {
-                    for (int x = 0; x < size; x++)
+                    if (!file.Contains(SPECULAR_EXTENTION) && !file.Contains(NORMAL_EXTENTION))
                     {
-                        Color c = Color.FromArgb(
-                            255,
-                            data[p],
-                            data[p + 1],
-                            data[p + 2]
-                        );
-                        bitmap.SetPixel(x, y, c);
-                        p += 3;
+                        string name = Path.GetFileNameWithoutExtension(file);
+
+                        textures.Add(name);
+                        Logger.Log($"Found {name}...");
                     }
                 }
 
-                //TODO: Remove Transparency before saving!
-                stream = mer.GetStream($"{bedrock}_mer.png", FileAccess.Write, FileMode.Create);
-                bitmap.Save(stream, ImageFormat.Png);
+                Benchmark o;
 
-                Logger.Log($"Saved {bedrock}!");
+                //convert them now
+                for (int i = 0; i < textures.Count; i++)
+                {
+                    o = new Benchmark($"Convert {textures[i]} to DXR", true);
 
-                //cleanup
-                bitmap.Dispose();
-                stream.Dispose();
+                    string java = textures[i];
+                    string bedrock = GetBedrockTextureName(java);
 
-                o.Finish();
+                    Logger.Log($"Converting {java} to {bedrock}...");
+                    File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
+                    File.Copy($"{sme.Path}\\{java}{NORMAL_EXTENTION}", $"{mer.Path}\\{bedrock}_normal.png");
+
+                    //create the json file
+                    using (FileStream json = mer.CreateFile($"{bedrock}.texture_set.json"))
+                    using (StreamWriter writer = new StreamWriter(json))
+                        writer.Write(GetJSON(bedrock, $"{bedrock}_mer", $"{bedrock}_normal"));
+
+                    Stream stream = sme.GetStream(java + SPECULAR_EXTENTION);
+                    Bitmap bitmap = new Bitmap(stream);
+
+                    //if it isnt a square then rip for now
+                    int size = bitmap.Width;
+
+                    //SME to MER isn't a straight copy sadly, but this should convert it quite nicely
+                    byte[] data = ConvertSMEtoMER(bitmap.To32BppRgba());
+
+                    bitmap.Dispose();
+                    stream.Dispose();
+
+                    bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+
+                    //Write MER array to bitmap now
+                    int p = 0;
+                    for (int y = 0; y < size; y++)
+                    {
+                        for (int x = 0; x < size; x++)
+                        {
+                            Color c = Color.FromArgb(
+                                255,
+                                data[p],
+                                data[p + 1],
+                                data[p + 2]
+                            );
+                            bitmap.SetPixel(x, y, c);
+                            p += 3;
+                        }
+                    }
+
+                    //TODO: Remove Transparency before saving!
+                    stream = mer.GetStream($"{bedrock}_mer.png", FileAccess.Write, FileMode.Create);
+                    bitmap.Save(stream, ImageFormat.Png);
+
+                    Logger.Log($"Saved {bedrock}!");
+
+                    //cleanup
+                    bitmap.Dispose();
+                    stream.Dispose();
+
+                    o.Finish();
+                }
+
+                Logger.Log("Convertion Complete!");
+                b.Finish();
             }
-
-            Logger.Log("Convertion Complete!");
-            b.Finish();
         }
 
         public static void Heightmap(string input)
