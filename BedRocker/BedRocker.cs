@@ -2,6 +2,7 @@
 // Licensed under EULA https://docs.google.com/document/d/1xPyZLRqjLYcKMxXLHLmA5TxHV-xww7mHYVUuWLt2q9g/edit?usp=sharing
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
@@ -18,6 +19,7 @@ using Prion.Mitochondria.Graphics.Layers;
 using Prion.Mitochondria.Graphics.Roots;
 using Prion.Mitochondria.Graphics.UI;
 using Prion.Nucleus.IO.Configs;
+using Prion.Nucleus.Threads;
 using Prion.Nucleus.Utilities;
 
 namespace BedRocker
@@ -92,7 +94,7 @@ namespace BedRocker
                             Text = "LABtoMER",
 
                             Disabled = true,
-                            //OnClick = () => ScheduleLoad(() => LABtoMER("DXR OFF", "DXR ON"))
+                            OnClick = () => ScheduleLoad(() => LABtoMER("DXR OFF", "DXR ON"))
                         },
                         new Button
                         {
@@ -154,11 +156,29 @@ namespace BedRocker
                 base.LoadingComplete();
             }
 
+            private Benchmark benchmark;
+            private bool running;
+
+            public override void Update()
+            {
+                base.Update();
+
+                if (!ThreadsRunning() && running)
+                {
+                    running = false;
+
+                    Logger.Log("\n\n\n\nConvertion Complete!");
+                    benchmark.Finish();
+                }
+            }
+
             public void SMEtoMER(string input, string output)
             {
-                Benchmark b = new Benchmark("Convert Pack to DXR", true);
+                if (ThreadsRunning()) return;
 
-                List<string> textures = new List<string>();
+                benchmark = new Benchmark("Convert Pack to DXR", true);
+
+                ConcurrentQueue<string> textures = new ConcurrentQueue<string>();
 
                 if (ApplicationDataStorage.Exists(output))
                     ApplicationDataStorage.DeleteDirectory(output, true);
@@ -173,76 +193,92 @@ namespace BedRocker
                     {
                         string name = Path.GetFileNameWithoutExtension(file);
 
-                        textures.Add(name);
+                        textures.Enqueue(name);
                         Logger.Log($"Found {name}...");
                     }
                 }
 
-                Benchmark o;
+                foreach (DynamicThread thread in DynamicThreads)
+                    thread.Task = convert;
 
-                //convert them now
-                for (int i = 0; i < textures.Count; i++)
+                //foreach (DynamicThread thread in DynamicThreads)
+                //    thread.Task = () => { };
+                //
+                //DynamicThreads[0].Task = convert;
+
+                running = true;
+                RunThreads();
+
+                void convert()
                 {
-                    o = new Benchmark($"Convert {textures[i]} to DXR", true);
+                    Benchmark o;
 
-                    string java = textures[i];
-                    string bedrock = GetBedrockTextureName(java);
-
-                    Logger.Log($"Converting {java} to {bedrock}...");
-                    File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
-                    File.Copy($"{sme.Path}\\{java}{NORMAL_EXTENTION}", $"{mer.Path}\\{bedrock}_normal.png");
-
-                    //create the json file
-                    using (FileStream json = mer.CreateFile($"{bedrock}.texture_set.json"))
-                    using (StreamWriter writer = new StreamWriter(json))
-                        writer.Write(GetJSON(bedrock, $"{bedrock}_mer", $"{bedrock}_normal"));
-
-                    Stream stream = sme.GetStream(java + SPECULAR_EXTENTION);
-                    Bitmap bitmap = new Bitmap(stream);
-
-                    //if it isnt a square then rip for now
-                    int size = bitmap.Width;
-
-                    //SME to MER isn't a straight copy sadly, but this should convert it quite nicely
-                    byte[] data = ConvertSMEtoMER(bitmap.To32BppRgba());
-
-                    bitmap.Dispose();
-                    stream.Dispose();
-
-                    bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
-
-                    //Write MER array to bitmap now
-                    int p = 0;
-                    for (int y = 0; y < size; y++)
+                    //convert them now
+                    while (textures.TryDequeue(out string t))
                     {
-                        for (int x = 0; x < size; x++)
+                        o = new Benchmark($"Convert {t} to DXR", true);
+
+                        string java = t;
+                        string bedrock = GetBedrockTextureName(java);
+
+                        Logger.Log($"Converting {java} to {bedrock}...");
+                        File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
+                        File.Copy($"{sme.Path}\\{java}{NORMAL_EXTENTION}", $"{mer.Path}\\{bedrock}_normal.png");
+
+                        //create the json file
+                        using (FileStream json = mer.CreateFile($"{bedrock}.texture_set.json"))
+                        using (StreamWriter writer = new StreamWriter(json))
+                            writer.Write(GetJSON(bedrock, $"{bedrock}_mer", $"{bedrock}_normal"));
+
+                        Stream stream = sme.GetStream(java + SPECULAR_EXTENTION);
+                        Bitmap bitmap = new Bitmap(stream);
+
+                        //if it isnt a square then rip for now
+                        int size = bitmap.Width;
+
+                        //SME to MER isn't a straight copy sadly, but this should convert it quite nicely
+                        byte[] data = ConvertSMEtoMER(bitmap.To32BppRgba());
+
+                        bitmap.Dispose();
+                        stream.Dispose();
+
+                        bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+
+                        //Write MER array to bitmap now
+                        int p = 0;
+                        for (int y = 0; y < size; y++)
                         {
-                            Color c = Color.FromArgb(
-                                255,
-                                data[p],
-                                data[p + 1],
-                                data[p + 2]
-                            );
-                            bitmap.SetPixel(x, y, c);
-                            p += 3;
+                            for (int x = 0; x < size; x++)
+                            {
+                                Color c = Color.FromArgb(
+                                    255,
+                                    data[p],
+                                    data[p + 1],
+                                    data[p + 2]
+                                );
+                                bitmap.SetPixel(x, y, c);
+                                p += 3;
+                            }
                         }
+
+                        //TODO: Remove Transparency before saving!
+                        stream = mer.GetStream($"{bedrock}_mer.png", FileAccess.Write, FileMode.Create);
+                        bitmap.Save(stream, ImageFormat.Png);
+
+                        Logger.Log($"Saved {bedrock}!");
+
+                        //cleanup
+                        bitmap.Dispose();
+                        stream.Dispose();
+
+                        o.Finish();
                     }
-
-                    //TODO: Remove Transparency before saving!
-                    stream = mer.GetStream($"{bedrock}_mer.png", FileAccess.Write, FileMode.Create);
-                    bitmap.Save(stream, ImageFormat.Png);
-
-                    Logger.Log($"Saved {bedrock}!");
-
-                    //cleanup
-                    bitmap.Dispose();
-                    stream.Dispose();
-
-                    o.Finish();
                 }
+            }
 
-                Logger.Log("Convertion Complete!");
-                b.Finish();
+            public void LABtoMER(string input, string output)
+            {
+                Logger.SystemConsole($"NOT IMPLEMENTED! ({input} to {output})", ConsoleColor.Yellow);
             }
         }
 
