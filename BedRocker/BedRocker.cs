@@ -412,7 +412,7 @@ namespace BedRocker
 
             //remap averages
             for (int i = 0; i < adjusted.Length; i++)
-                adjusted[i] = (byte)PrionMath.Scale(adjusted[i], min, max, 0, 255);
+                adjusted[i] = (byte)PrionMath.Remap(adjusted[i], min, max, 0, 255);
 
             return adjusted;
         }
