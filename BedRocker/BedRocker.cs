@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
@@ -15,8 +16,11 @@ using FreeImageAPI;
 using Prion.Golgi.Graphics.Overlays;
 using Prion.Mitochondria;
 using Prion.Mitochondria.Graphics;
-using Prion.Mitochondria.Graphics.Layers;
+using Prion.Mitochondria.Graphics.Drawables;
+using Prion.Mitochondria.Graphics.Layers._2D;
 using Prion.Mitochondria.Graphics.Roots;
+using Prion.Mitochondria.Graphics.Sprites;
+using Prion.Mitochondria.Graphics.Text;
 using Prion.Mitochondria.Graphics.UI;
 using Prion.Nucleus.IO.Configs;
 using Prion.Nucleus.Threads;
@@ -57,8 +61,28 @@ namespace BedRocker
 
         private class MainMenu : Root
         {
+            private readonly TextBox r;
+            private readonly TextBox g;
+            private readonly TextBox b;
+
+            public byte R = 255;
+            public byte G = 255;
+            public byte B = 255;
+
             public MainMenu()
             {
+                Renderer.Window.CursorHidden = true;
+
+                Add(new Layer2D<Sprite>
+                {
+                    Child = new Box
+                    {
+                        Size = new Vector2(8000),
+                        Color = Color.DodgerBlue,
+                        Alpha = 0.8f
+                    }
+                });
+
                 Add(new ListLayer<Button>
                 {
                     Size = new Vector2(200, 550),
@@ -132,6 +156,20 @@ namespace BedRocker
                             Background = TextureStore.GetTexture("square.png"),
                             BackgroundSprite =
                             {
+                                Color = Color.OrangeRed
+                            },
+
+                            Text = "MERman",
+
+                            OnClick = () => ScheduleLoad(() => Glow("DXR ON", R, G, B))
+                        },
+                        new Button
+                        {
+                            Size = new Vector2(200, 100),
+
+                            Background = TextureStore.GetTexture("square.png"),
+                            BackgroundSprite =
+                            {
                                 Color = Color.MediumSeaGreen
                             },
 
@@ -146,7 +184,115 @@ namespace BedRocker
                     }
                 });
 
+                Add(new ListLayer<IDrawable2D>
+                {
+                    Size = new Vector2(100, 200),
+                    Position = new Vector2(240, 0),
+                    Spacing = 10,
+
+                    Children = new IDrawable2D[]
+                    {
+                        new InstancedText
+                        {
+                            Origin = Mounts.TopLeft,
+                            ParentOrigin = Mounts.TopLeft,
+                            Text = "RGB (0 - 255)",
+                            FontScale = 0.5f
+                        },
+                        new InstancedText
+                        {
+                            Origin = Mounts.TopLeft,
+                            ParentOrigin = Mounts.TopLeft,
+                            Text = "R",
+                            FontScale = 0.25f
+                        },
+                        r = new TextBox
+                        {
+                            Origin = Mounts.TopLeft,
+                            ParentOrigin = Mounts.TopLeft,
+                            Text = R.ToString(),
+                            Scale = new Vector2(0.25f),
+                            OnEnter = value =>
+                            {
+                                byte v;
+                                try
+                                {
+                                    v = byte.Parse(value);
+                                }
+                                catch
+                                {
+                                    v = 255;
+                                }
+
+                                R = Math.Clamp(v, (byte)0, (byte)255);
+                                r.Text = R.ToString();
+                            }
+                        },
+
+                        new InstancedText
+                        {
+                            Origin = Mounts.TopLeft,
+                            ParentOrigin = Mounts.TopLeft,
+                            Text = "G",
+                            FontScale = 0.25f
+                        },
+                        g = new TextBox
+                        {
+                            Origin = Mounts.TopLeft,
+                            ParentOrigin = Mounts.TopLeft,
+                            Text = G.ToString(),
+                            Scale = new Vector2(0.25f),
+                            OnEnter = value =>
+                            {
+                                byte v;
+                                try
+                                {
+                                    v = byte.Parse(value);
+                                }
+                                catch
+                                {
+                                    v = 255;
+                                }
+
+                                G = Math.Clamp(v, (byte)0, (byte)255);
+                                g.Text = G.ToString();
+                            }
+                        },
+
+                        new InstancedText
+                        {
+                            Origin = Mounts.TopLeft,
+                            ParentOrigin = Mounts.TopLeft,
+                            Text = "B",
+                            FontScale = 0.25f
+                        },
+                        b = new TextBox
+                        {
+                            Origin = Mounts.TopLeft,
+                            ParentOrigin = Mounts.TopLeft,
+                            Text = B.ToString(),
+                            Scale = new Vector2(0.25f),
+                            OnEnter = value =>
+                            {
+                                byte v;
+                                try
+                                {
+                                    v = byte.Parse(value);
+                                }
+                                catch
+                                {
+                                    v = 255;
+                                }
+
+                                B = Math.Clamp(v, (byte)0, (byte)255);
+                                b.Text = B.ToString();
+                            }
+                        },
+                    }
+                });
+
                 Add(new PerformanceDisplay(DisplayType.FPS));
+                Add(Cursor = new Cursor());
             }
 
             public override void LoadingComplete()
@@ -358,6 +504,77 @@ namespace BedRocker
             }
 
             b.Finish();
+        }
+
+        public static void Glow(string input, byte r, byte g, byte b)
+        {
+            Benchmark c = new Benchmark("Convert DXR to GLOW", true);
+
+            List<string> textures = new List<string>();
+
+            Storage folder = ApplicationDataStorage.GetStorage($"{input}");
+
+            //index the files
+            foreach (string file in folder.GetFiles())
+            {
+                if (!file.Contains(".texture_set") && !file.Contains("_mer") && !file.Contains("_normal"))
+                {
+                    string name = Path.GetFileNameWithoutExtension(file);
+
+                    textures.Add(name);
+                    Logger.Log($"Found {name}...");
+                }
+            }
+
+            Benchmark o;
+
+            //convert them now
+            for (int i = 0; i < textures.Count; i++)
+            {
+                if (!folder.Exists(textures[i] + "_mer.png"))
+                {
+                    Logger.Warning($"Skipping {textures[i]}...", LogType.IO);
+                    continue;
+                }
+
+                o = new Benchmark($"Convert {textures[i]} to GLOW", true);
+
+                Logger.Log($"Converting {textures[i]}...");
+
+                Stream stream = folder.GetStream(textures[i] + "_mer.png");
+                Bitmap bitmap = new Bitmap(stream);
+
+                //if it isnt a square then rip for now
+                int size = bitmap.Width;
+
+                bitmap.Dispose();
+                stream.Dispose();
+
+                FIBITMAP bit = FreeImage.Allocate(size, size, 24);
+
+                //Write GLOW array to bitmap now
+                for (uint y = 0; y < size; y++)
+                {
+                    for (uint x = 0; x < size; x++)
+                    {
+                        RGBQUAD quad = new RGBQUAD(Color.FromArgb(r, g, b));
+                        FreeImage.SetPixelColor(bit, x, y, ref quad);
+                    }
+                }
+
+                folder.DeleteFile(textures[i] + "_mer.png");
+                stream = folder.GetStream($"{textures[i]}_mer.png", FileAccess.Write, FileMode.Create);
+                FreeImage.SaveToStream(bit, stream, FREE_IMAGE_FORMAT.FIF_PNG);
+
+                Logger.Log($"Saved {textures[i]}!");
+
+                //cleanup
+                stream.Dispose();
+
+                o.Finish();
+            }
+
+            c.Finish();
         }
 
         public static void Clean(string[] folders)
