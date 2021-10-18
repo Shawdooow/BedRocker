@@ -4,10 +4,10 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Linq;
 using Prion.Nucleus.Debug;
 using Prion.Nucleus.Debug.Benchmarking;
 using Prion.Nucleus.IO;
@@ -22,7 +22,8 @@ using Prion.Mitochondria.Graphics.Roots;
 using Prion.Mitochondria.Graphics.Sprites;
 using Prion.Mitochondria.Graphics.Text;
 using Prion.Mitochondria.Graphics.UI;
-using Prion.Nucleus.IO.Configs;
+using Prion.Nucleus;
+using Prion.Nucleus.Settings;
 using Prion.Nucleus.Threads;
 using Prion.Nucleus.Utilities;
 
@@ -35,17 +36,38 @@ namespace BedRocker
 
         public static void Main(string[] args)
         {
-            using (BedRocker rocker = new BedRocker(args))
-                rocker.Start(new MainMenu());
+
+            #region Startup
+
+
+            //Do Launch args stuff first incase someone wants STATIC READONLYS!!!!
+            List<string> launch = new(args);
+
+#if !PUBLISH || PERSONAL
+            if (!launch.Any(arg => arg.Contains("Features")))
+                launch.Add($"Features={Features.Radioactive}");
+#endif
+
+            MitochondriaLaunchArgs m = new()
+            {
+                Name = "Bedrocker",
+            };
+            MitochondriaLaunchArgs.DisableAudio = true;
+            MitochondriaLaunchArgs.ProccessArgs(launch.ToArray());
+
+
+            #endregion
+
+
+            BedRocker rocker = new BedRocker(m);
+            rocker.Start(new MainMenu());
         }
 
         protected override bool UseLocalDataStorage => true;
 
-        protected override bool EnableAudio => false;
-
-        protected BedRocker(string[] args) : base("BedRocker", args)
+        protected BedRocker(MitochondriaLaunchArgs args) : base(args)
         {
-            int dtco = Settings.GetInt(PrionSetting.DynamicThreadCountOverride);
+            int dtco = Settings.GetInt(NucleusSetting.DynamicThreadCountOverride);
 
             if (dtco <= -1)
             {
@@ -192,14 +214,14 @@ namespace BedRocker
 
                     Children = new IDrawable2D[]
                     {
-                        new InstancedText
+                        new Text2D
                         {
                             Origin = Mounts.TopLeft,
                             ParentOrigin = Mounts.TopLeft,
                             Text = "RGB (0 - 255)",
                             FontScale = 0.5f
                         },
-                        new InstancedText
+                        new Text2D
                         {
                             Origin = Mounts.TopLeft,
                             ParentOrigin = Mounts.TopLeft,
@@ -229,7 +251,7 @@ namespace BedRocker
                             }
                         },
 
-                        new InstancedText
+                        new Text2D
                         {
                             Origin = Mounts.TopLeft,
                             ParentOrigin = Mounts.TopLeft,
@@ -259,7 +281,7 @@ namespace BedRocker
                             }
                         },
 
-                        new InstancedText
+                        new Text2D
                         {
                             Origin = Mounts.TopLeft,
                             ParentOrigin = Mounts.TopLeft,
@@ -383,7 +405,7 @@ namespace BedRocker
                         int size = bitmap.Width;
 
                         //SME to MER isn't a straight copy sadly, but this should convert it quite nicely
-                        byte[] data = ConvertSMEtoMER(bitmap.To32BppRgba());
+                        byte[] data = ConvertSMEtoMER(bitmap.BgraToRgba32Bpp());
 
                         bitmap.Dispose();
                         stream.Dispose();
@@ -473,7 +495,7 @@ namespace BedRocker
                 int size = bitmap.Width;
 
                 //convert it to an 8bpp array
-                byte[] data = ConvertNORMALtoHEIGHT(bitmap.To24BppRgb());
+                byte[] data = ConvertNORMALtoHEIGHT(bitmap.BgrToRgb24Bpp());
 
                 bitmap.Dispose();
                 stream.Dispose();
@@ -584,6 +606,11 @@ namespace BedRocker
                     ApplicationDataStorage.DeleteDirectory(folders[i], true);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         public static byte[] ConvertSMEtoMER(byte[] file)
         {
             //we don't want alpha
