@@ -414,6 +414,8 @@ namespace BedRocker
 
                                 data = bitmap.BgraToRgba32Bpp();
 
+                                bitmap.Dispose();
+                                stream.Dispose();
                                 bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
 
                                 //Write grayscaled array to bitmap now
@@ -473,6 +475,8 @@ namespace BedRocker
 
                                 data = bitmap.BgraToRgba32Bpp();
 
+                                bitmap.Dispose();
+                                stream.Dispose();
                                 bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
 
                                 //Write grayscaled array to bitmap now
