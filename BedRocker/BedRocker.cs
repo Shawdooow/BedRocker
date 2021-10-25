@@ -27,6 +27,7 @@ using Prion.Nucleus.Settings;
 using Prion.Nucleus.Threads;
 using Prion.Nucleus.Utilities;
 using Prion.Nucleus.Utilities.Vectors;
+using TGASharpLib;
 
 namespace BedRocker
 {
@@ -393,6 +394,7 @@ namespace BedRocker
 
                         int size;
                         byte[] data;
+                        int m;
                         int p;
 
                         switch (java)
@@ -423,13 +425,22 @@ namespace BedRocker
                                             gray,
                                             gray,
                                             gray);
+
                                         bitmap.SetPixel(x, y, c);
                                         p += 4;
                                     }
                                 }
 
-                                stream = mer.GetStream($"{bedrock}.png", FileAccess.Write, FileMode.Create);
-                                bitmap.Save(stream, ImageFormat.Png);
+                                if (java == "grass_block_side_overlay")
+                                {
+                                    TGA tga = new(bitmap);
+                                    tga.Save($"{mer.Path}\\{bedrock}.tga");
+                                }
+                                else
+                                {
+                                    stream = mer.GetStream($"{bedrock}.png", FileAccess.Write, FileMode.Create);
+                                    bitmap.Save(stream, ImageFormat.Png);
+                                }
 
                                 bitmap.Dispose();
                                 stream.Dispose();
