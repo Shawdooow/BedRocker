@@ -400,7 +400,6 @@ namespace BedRocker
                         switch (java)
                         {
                             default:
-                                continue;
                                 File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
                                 break;
                             case "grass_block_top":
