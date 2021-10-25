@@ -500,20 +500,46 @@ namespace BedRocker
                         bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
 
                         //Write MER array to bitmap now
+
                         p = 0;
-                        for (int y = 0; y < size; y++)
+                        switch (java)
                         {
-                            for (int x = 0; x < size; x++)
-                            {
-                                Color c = Color.FromArgb(
-                                    255,
-                                    data[p],
-                                    data[p + 1],
-                                    data[p + 2]
-                                );
-                                bitmap.SetPixel(x, y, c);
-                                p += 3;
-                            }
+                            default:
+                                for (int y = 0; y < size; y++)
+                                {
+                                    for (int x = 0; x < size; x++)
+                                    {
+                                        Color c = Color.FromArgb(
+                                            255,
+                                            data[p],
+                                            data[p + 1],
+                                            data[p + 2]
+                                        );
+                                        bitmap.SetPixel(x, y, c);
+                                        p += 3;
+                                    }
+                                }
+                                break;
+                            case "grass_block_top":
+                            case "grass_block_side_overlay":
+                            case "tall_grass_top":
+                            case "tall_grass_bottom":
+                            case "clay":
+                                for (int y = 0; y < size; y++)
+                                {
+                                    for (int x = 0; x < size; x++)
+                                    {
+                                        Color c = Color.FromArgb(
+                                            255,
+                                            data[p],
+                                            0,
+                                            data[p + 2]
+                                        );
+                                        bitmap.SetPixel(x, y, c);
+                                        p += 3;
+                                    }
+                                }
+                                break;
                         }
 
                         //TODO: Remove Transparency before saving!
