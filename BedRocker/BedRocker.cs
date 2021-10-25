@@ -465,7 +465,53 @@ namespace BedRocker
                                 bitmap.Dispose();
                                 stream.Dispose();
                                 break;
+                            case "glass":
+                                stream = sme.GetStream($"{java}.png");
+                                bitmap = new Bitmap(stream);
 
+                                size = bitmap.Width;
+
+                                data = bitmap.BgraToRgba32Bpp();
+
+                                bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+
+                                //Write grayscaled array to bitmap now
+                                p = 0;
+                                for (int y = 0; y < size; y++)
+                                {
+                                    for (int x = 0; x < size; x++)
+                                    {
+                                        int gray = grayscale(new Vector3(data[p], data[p + 1], data[p + 2]));
+                                        Color c;
+
+                                        if (data[p + 3] > 0)
+                                        {
+                                            c = Color.FromArgb(
+                                            data[p + 3],
+                                            gray,
+                                            gray,
+                                            gray);
+                                        }
+                                        else
+                                        {
+                                            c = Color.FromArgb(
+                                            0,
+                                            255,
+                                            255,
+                                            255);
+                                        }
+
+                                        bitmap.SetPixel(x, y, c);
+                                        p += 4;
+                                    }
+                                }
+
+                                stream = mer.GetStream($"{bedrock}.png", FileAccess.Write, FileMode.Create);
+                                bitmap.Save(stream, ImageFormat.Png);
+
+                                bitmap.Dispose();
+                                stream.Dispose();
+                                break;
                             case "warped_stem":
                             case "warped_nylium":
                             case "crimson_stem":
@@ -802,6 +848,9 @@ namespace BedRocker
                 "grass_block_top" => "grass_top",
                 "grass_block_side_overlay" => "grass_side",
                 "grass_block_snow" => "grass_side_snowed",
+
+                "farmland" => "farmland_dry",
+                "farmland_moist" => "farmland_wet",
 
                 "sandstone" => "sandstone_normal",
 
