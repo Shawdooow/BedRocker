@@ -746,6 +746,7 @@ namespace BedRocker
                 int size = bitmap.Width;
 
                 bitmap.Dispose();
+                stream.Close();
                 stream.Dispose();
 
                 FIBITMAP bit = FreeImage.Allocate(size, size, 24);
@@ -760,8 +761,10 @@ namespace BedRocker
                     }
                 }
 
-                folder.DeleteFile(textures[i] + "_mer.png");
-                stream = folder.GetStream($"{textures[i]}_mer.png", FileAccess.Write, FileMode.Create);
+                if (!folder.Exists("GLOW"))
+                    folder.CreateDirectory("GLOW");
+
+                stream = folder.GetStream($"GLOW\\{textures[i]}_mer.png", FileAccess.Write, FileMode.Create);
                 FreeImage.SaveToStream(bit, stream, FREE_IMAGE_FORMAT.FIF_PNG);
 
                 Logger.Log($"Saved {textures[i]}!");
