@@ -26,6 +26,7 @@ using Prion.Nucleus;
 using Prion.Nucleus.Settings;
 using Prion.Nucleus.Threads;
 using Prion.Nucleus.Utilities;
+using Prion.Nucleus.Utilities.Vectors;
 
 namespace BedRocker
 {
@@ -369,11 +370,6 @@ namespace BedRocker
                 foreach (DynamicThread thread in DynamicThreads)
                     thread.Task = convert;
 
-                //foreach (DynamicThread thread in DynamicThreads)
-                //    thread.Task = () => { };
-                //
-                //DynamicThreads[0].Task = convert;
-
                 running = true;
                 RunThreads();
 
@@ -388,24 +384,84 @@ namespace BedRocker
 
                         string java = t;
                         string bedrock = GetBedrockTextureName(java);
+                        string folder = string.Empty;
 
                         Logger.Log($"Converting {java} to {bedrock}...");
-                        File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
-                        File.Copy($"{sme.Path}\\{java}{NORMAL_EXTENTION}", $"{mer.Path}\\{bedrock}_normal.png");
+
+                        Stream stream;
+                        Bitmap bitmap;
+
+                        int size;
+                        byte[] data;
+                        int p;
+
+                        switch (java)
+                        {
+                            default:
+                                File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
+                                break;
+                            case "grass_block_top":
+                            case "grass_block_side_overlay":
+                                stream = sme.GetStream($"{java}.png");
+                                bitmap = new Bitmap(stream);
+
+                                size = bitmap.Width;
+
+                                data = bitmap.BgraToRgba32Bpp();
+
+                                bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
+
+                                //Write grayscaled array to bitmap now
+                                p = 0;
+                                for (int y = 0; y < size; y++)
+                                {
+                                    for (int x = 0; x < size; x++)
+                                    {
+                                        int gray = grayscale(new Vector3(data[p], data[p + 1], data[p + 2]));
+                                        Color c = Color.FromArgb(
+                                            data[p + 3],
+                                            gray,
+                                            gray,
+                                            gray);
+                                        bitmap.SetPixel(x, y, c);
+                                        p += 3;
+                                    }
+                                }
+
+                                stream = mer.GetStream($"{bedrock}.png", FileAccess.Write, FileMode.Create);
+                                bitmap.Save(stream, ImageFormat.Png);
+
+                                bitmap.Dispose();
+                                stream.Dispose();
+                                break;
+
+                            case "warped_stem":
+                            case "warped_nylium":
+                            case "crimson_stem":
+                            case "crimson_nylium":
+                                folder = "huge_fungus\\";
+                                if (!Directory.Exists($"{mer.Path}\\huge_fungus"))
+                                    Directory.CreateDirectory($"{mer.Path}\\huge_fungus");
+
+                                File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{folder}{bedrock}.png");
+                                break;
+                        }
+
+                        File.Copy($"{sme.Path}\\{java}{NORMAL_EXTENTION}", $"{mer.Path}\\{folder}{bedrock}_normal.png");
 
                         //create the json file
-                        using (FileStream json = mer.CreateFile($"{bedrock}.texture_set.json"))
+                        using (FileStream json = mer.CreateFile($"{folder}{bedrock}.texture_set.json"))
                         using (StreamWriter writer = new StreamWriter(json))
                             writer.Write(GetJSON(bedrock, $"{bedrock}_mer", $"{bedrock}_normal"));
 
-                        Stream stream = sme.GetStream(java + SPECULAR_EXTENTION);
-                        Bitmap bitmap = new Bitmap(stream);
+                        stream = sme.GetStream(java + SPECULAR_EXTENTION);
+                        bitmap = new Bitmap(stream);
 
                         //if it isnt a square then rip for now
-                        int size = bitmap.Width;
+                        size = bitmap.Width;
 
                         //SME to MER isn't a straight copy sadly, but this should convert it quite nicely
-                        byte[] data = ConvertSMEtoMER(bitmap.BgraToRgba32Bpp());
+                        data = ConvertSMEtoMER(bitmap.BgraToRgba32Bpp());
 
                         bitmap.Dispose();
                         stream.Dispose();
@@ -413,7 +469,7 @@ namespace BedRocker
                         bitmap = new Bitmap(size, size, PixelFormat.Format32bppArgb);
 
                         //Write MER array to bitmap now
-                        int p = 0;
+                        p = 0;
                         for (int y = 0; y < size; y++)
                         {
                             for (int x = 0; x < size; x++)
@@ -430,10 +486,10 @@ namespace BedRocker
                         }
 
                         //TODO: Remove Transparency before saving!
-                        stream = mer.GetStream($"{bedrock}_mer.png", FileAccess.Write, FileMode.Create);
+                        stream = mer.GetStream($"{folder}{bedrock}_mer.png", FileAccess.Write, FileMode.Create);
                         bitmap.Save(stream, ImageFormat.Png);
 
-                        Logger.Log($"Saved {bedrock}!");
+                        Logger.Log($"Saved {folder}{bedrock}!");
 
                         //cleanup
                         bitmap.Dispose();
@@ -441,6 +497,19 @@ namespace BedRocker
 
                         o.Finish();
                     }
+                }
+
+                int grayscale(Vector3 color)
+                {
+                    const float r = 0.299f;
+                    const float g = 0.587f;
+                    const float b = 0.114f;
+
+                    float gray;
+
+                    gray = Vector3.Dot(color, new Vector3(r, g, b));
+
+                    return (int)gray;
                 }
             }
 
@@ -677,6 +746,8 @@ namespace BedRocker
                 "grass_block_side_overlay" => "grass_side",
                 "grass_block_snow" => "grass_side_snowed",
 
+                "furnace_front" => "furnace_front_off",
+
                 "tall_grass_top" => "double_plant_grass_top",
                 "tall_grass_bottom" => "double_plant_grass_bottom",
 
@@ -719,8 +790,12 @@ namespace BedRocker
                 "warped_stem" => "warped_stem_side",
                 "warped_nylium" => "warped_nylium_top",
 
-                "crimson_stem" => "crimson_stem_side",
+                "crimson_stem" => "crimson_log_side",
                 "crimson_nylium" => "crimson_nylium_top",
+
+                "nether_wart_stage0" => "nether_wart_stage_0",
+                "nether_wart_stage1" => "nether_wart_stage_1",
+                "nether_wart_stage2" => "nether_wart_stage_2",
 
                 "bricks" => "brick",
 
