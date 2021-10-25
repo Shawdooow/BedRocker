@@ -760,6 +760,24 @@ namespace BedRocker
                 "red_wool" => "wool_colored_red",
                 "white_wool" => "wool_colored_white",
                 "yellow_wool" => "wool_colored_yellow",
+
+                "black_terracotta" => "glazed_terracotta_black",
+                "blue_terracotta" => "glazed_terracotta_blue",
+                "brown_terracotta" => "glazed_terracotta_brown",
+                "cyan_terracotta" => "glazed_terracotta_cyan",
+                "gray_terracotta" => "glazed_terracotta_gray",
+                "green_terracotta" => "glazed_terracotta_green",
+                "light_blue_terracotta" => "glazed_terracotta_light_blue",
+                "light_gray_terracotta" => "glazed_terracotta_silver",
+                "lime_terracotta" => "glazed_terracotta_lime",
+                "magenta_terracotta" => "glazed_terracotta_magenta",
+                "orange_terracotta" => "glazed_terracotta_orange",
+                "pink_terracotta" => "glazed_terracotta_pink",
+                "purple_terracotta" => "glazed_terracotta_purple",
+                "red_terracotta" => "glazed_terracotta_red",
+                "terracotta" => "glazed_terracotta",
+                "white_terracotta" => "glazed_terracotta_white",
+                "yellow_terracotta" => "glazed_terracotta_yellow",
                 _ => java
             };
         }
