@@ -400,12 +400,16 @@ namespace BedRocker
                         switch (java)
                         {
                             default:
+                                continue;
                                 File.Copy($"{sme.Path}\\{java}.png", $"{mer.Path}\\{bedrock}.png");
                                 break;
                             case "grass_block_top":
                             case "grass_block_side_overlay":
                                 stream = sme.GetStream($"{java}.png");
                                 bitmap = new Bitmap(stream);
+
+                                Stream dirtStream = sme.GetStream($"dirt.png");
+                                Bitmap dirt = new Bitmap(dirtStream);
 
                                 size = bitmap.Width;
 
@@ -420,11 +424,25 @@ namespace BedRocker
                                     for (int x = 0; x < size; x++)
                                     {
                                         int gray = grayscale(new Vector3(data[p], data[p + 1], data[p + 2]));
-                                        Color c = Color.FromArgb(
+                                        Color c;
+
+                                        if (data[p + 3] > 0)
+                                        {
+                                            c = Color.FromArgb(
                                             data[p + 3],
                                             gray,
                                             gray,
                                             gray);
+                                        }
+                                        else
+                                        {
+                                            Color pixel = dirt.GetPixel(x, y);
+                                            c = Color.FromArgb(
+                                            0,
+                                            pixel.R,
+                                            pixel.G,
+                                            pixel.B);
+                                        }
 
                                         bitmap.SetPixel(x, y, c);
                                         p += 4;
@@ -441,6 +459,9 @@ namespace BedRocker
                                     stream = mer.GetStream($"{bedrock}.png", FileAccess.Write, FileMode.Create);
                                     bitmap.Save(stream, ImageFormat.Png);
                                 }
+
+                                dirt.Dispose();
+                                dirtStream.Dispose();
 
                                 bitmap.Dispose();
                                 stream.Dispose();
