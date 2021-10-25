@@ -748,7 +748,13 @@ namespace BedRocker
 
                 "sandstone" => "sandstone_normal",
 
+                "packed_ice" => "ice_packed",
+
                 "furnace_front" => "furnace_front_off",
+
+                "torch" => "torch_on",
+
+                "redstone_torch" => "redstone_torch_on",
 
                 "tall_grass_top" => "double_plant_grass_top",
                 "tall_grass_bottom" => "double_plant_grass_bottom",
