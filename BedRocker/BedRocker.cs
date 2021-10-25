@@ -424,7 +424,7 @@ namespace BedRocker
                                             gray,
                                             gray);
                                         bitmap.SetPixel(x, y, c);
-                                        p += 3;
+                                        p += 4;
                                     }
                                 }
 
@@ -745,6 +745,8 @@ namespace BedRocker
                 "grass_block_top" => "grass_top",
                 "grass_block_side_overlay" => "grass_side",
                 "grass_block_snow" => "grass_side_snowed",
+
+                "sandstone" => "sandstone_normal",
 
                 "furnace_front" => "furnace_front_off",
 
