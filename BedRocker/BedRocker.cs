@@ -404,6 +404,7 @@ namespace BedRocker
                                 break;
                             case "grass_block_top":
                             case "grass_block_side_overlay":
+                            case "grass":
                                 stream = sme.GetStream($"{java}.png");
                                 bitmap = new Bitmap(stream);
 
@@ -517,9 +518,19 @@ namespace BedRocker
                                 stream.Dispose();
                                 break;
                             case "warped_stem":
-                            case "warped_nylium":
+                            case "warped_stem_top":
+                            case "stripped_warped_stem":
+                            case "stripped_warped_stem_top":
+                            case "warped_door_top":
+                            case "warped_door_bottom":
+                            case "warped_trapdoor":
                             case "crimson_stem":
-                            case "crimson_nylium":
+                            case "crimson_stem_top":
+                            case "stripped_crimson_stem":
+                            case "stripped_crimson_stem_top":
+                            case "crimson_door_top":
+                            case "crimson_door_bottom":
+                            case "crimson_trapdoor":
                                 folder = "huge_fungus\\";
                                 if (!Directory.Exists($"{mer.Path}\\huge_fungus"))
                                     Directory.CreateDirectory($"{mer.Path}\\huge_fungus");
@@ -869,8 +880,34 @@ namespace BedRocker
 
                 "redstone_torch" => "redstone_torch_on",
 
+                "grass" => "tallgrass",
+
                 "tall_grass_top" => "double_plant_grass_top",
                 "tall_grass_bottom" => "double_plant_grass_bottom",
+
+                "dandelion" => "flower_dandelion",
+                "poppy" => "flower_rose",
+                "cornflower" => "flower_cornflower",
+                "allium" => "flower_allium",
+                "azure_bluet" => "flower_rose_blue",
+                "blue_orchid" => "flower_blue_orchid",
+                "oxeye_daisy" => "flower_oxeye_daisy",
+                "sunflower_front" => "double_plant_sunflower_front",
+                "sunflower_back" => "double_plant_sunflower_back",
+                "sunflower_top" => "double_plant_sunflower_top",
+                "sunflower_bottom" => "double_plant_sunflower_bottom",
+                "lily_of_the_valley" => "flower_lily_of_the_valley",
+                "red_tulip" => "flower_tulip_red",
+                "orange_tulip" => "flower_tulip_orange",
+                "pink_tulip" => "flower_tulip_pink",
+                "white_tulip" => "flower_tulip_white",
+                "red_mushroom" => "mushroom_red",
+                "brown_mushroom" => "mushroom_brown",
+
+                "red_mushroom_block" => "mushroom_block_skin_red",
+                "brown_mushroom_block" => "mushroom_block_skin_brown",
+                "mushroom_block_inside" => "mushroom_block_inside",
+                "mushroom_stem" => "mushroom_block_skin_stem",
 
                 "oak_log_top" => "log_oak_top",
                 "oak_log" => "log_oak",
@@ -914,13 +951,23 @@ namespace BedRocker
                 "crimson_stem" => "crimson_log_side",
                 "crimson_nylium" => "crimson_nylium_top",
 
+                "nether_quartz_ore" => "quartz_ore",
+
                 "nether_wart_stage0" => "nether_wart_stage_0",
                 "nether_wart_stage1" => "nether_wart_stage_1",
                 "nether_wart_stage2" => "nether_wart_stage_2",
 
                 "bricks" => "brick",
 
+                "quartz_pillar" => "quartz_block_lines",
+                "quartz_pillar_top" => "quartz_block_lines_top",
+                "chiseled_quartz_block" => "quartz_block_chiseled",
+                "chiseled_quartz_block_top" => "quartz_block_chiseled_top",
+
                 "mossy_cobblestone" => "cobblestone_mossy",
+                "stone_bricks" => "stonebrick",
+                "cracked_stone_bricks" => "stonebrick_cracked",
+                "chiseled_stone_bricks" => "stonebrick_carved",
                 "mossy_stone_bricks" => "stonebrick_mossy",
 
                 "andesite" => "stone_andesite",
@@ -930,8 +977,6 @@ namespace BedRocker
                 "polished_andesite" => "stone_andesite_smooth",
                 "polished_diorite" => "stone_diorite_smooth",
                 "polished_granite" => "stone_granite_smooth",
-
-                "cracked_stone_bricks" => "stonebrick_cracked",
 
                 "nether_bricks" => "nether_brick",
 
